@@ -11,6 +11,14 @@ export const userSchema = z
     role: z.enum(['user', 'admin', 'moderator']).default('user'),
     isActive: z.boolean().default(true),
     lastLoginAt: z.date().or(z.string()).optional(),
+    // Health metrics
+    height: z.number().min(50).max(250).optional(), // in cm
+    weight: z.number().min(20).max(300).optional(), // in kg
+    birthDate: z.date().or(z.string()).optional(),
+    gender: z.enum(['male', 'female', 'other']).optional(),
+    activityLevel: z
+      .enum(['sedentary', 'light', 'moderate', 'active', 'very_active'])
+      .optional(),
   })
   .extend(baseDocumentSchema.shape)
   .extend(timestampSchema.shape);
@@ -24,6 +32,14 @@ export const createUserSchema = z.object({
   role: z.enum(['user', 'admin', 'moderator']).default('user'),
   isActive: z.boolean().default(true),
   lastLoginAt: z.date().or(z.string()).optional(),
+  // Health metrics
+  height: z.number().min(50).max(250).optional(), // in cm
+  weight: z.number().min(20).max(300).optional(), // in kg
+  birthDate: z.date().or(z.string()).optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
+  activityLevel: z
+    .enum(['sedentary', 'light', 'moderate', 'active', 'very_active'])
+    .optional(),
 });
 
 // Schema for updating a user (all fields optional)

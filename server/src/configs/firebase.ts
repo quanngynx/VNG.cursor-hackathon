@@ -22,7 +22,7 @@ export const initializeFirebase = (): void => {
 
       // Explicitly use default settings without custom grpc setup unless needed
       firestoreDb = admin.firestore();
-      
+
       firestoreDb.settings({
         ignoreUndefinedProperties: true,
         // Add explicit empty config to avoid auto-detection issues in some environments
@@ -45,7 +45,7 @@ export const getFirestore = (): Firestore => {
     } catch (e) {
       // Ignore error here, let the original error propagate if needed
     }
-    
+
     if (!firestoreDb) {
       throw new Error(
         'Firestore has not been initialized. Call initializeFirebase() first.',

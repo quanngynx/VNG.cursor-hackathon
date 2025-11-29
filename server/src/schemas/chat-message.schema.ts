@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { baseDocumentSchema, timestampSchema } from './base.schema';
+import { foodSuggestionSchema } from './chat.schema';
 
 // Chat message schema
 export const chatMessageSchema = z
@@ -13,6 +14,7 @@ export const chatMessageSchema = z
         model: z.string().optional(),
         tokens: z.number().optional(),
         responseTime: z.number().optional(),
+        suggestions: z.array(foodSuggestionSchema).optional(),
       })
       .optional(),
   })
@@ -30,6 +32,7 @@ export const createChatMessageSchema = z.object({
       model: z.string().optional(),
       tokens: z.number().optional(),
       responseTime: z.number().optional(),
+      suggestions: z.array(foodSuggestionSchema).optional(),
     })
     .optional(),
 });

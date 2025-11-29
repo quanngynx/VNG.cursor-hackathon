@@ -1,28 +1,32 @@
-import { Router } from 'express'
-import { foodLogRouter } from './food-log.routes'
-import { chatRouter } from './chat.routes'
-import { createFoodLog } from '@/controllers/food-log.controller'
-import { getSummary } from '@/controllers/summary.controller'
+import { Router } from 'express';
+import { foodLogRouter } from './food-log.routes';
+import { chatRouter } from './chat.routes';
+import { userRouter } from './user.routes';
+import { createFoodLog } from '@/controllers/food-log.controller';
+import { getSummary } from '@/controllers/summary.controller';
 
 // ROUTES FOR THE APP
-const router: Router = Router()
+const router: Router = Router();
 
 // Check hello world
 router.get('/', (req, res) => {
-  res.status(200).json({ message: 'Hello World' })
-})
+  res.status(200).json({ message: 'Hello World' });
+});
 
 // Chat routes
-router.use('/chat', chatRouter)
+router.use('/chat', chatRouter);
 
 // Food log routes
-router.use('/food-logs', foodLogRouter)
+router.use('/food-logs', foodLogRouter);
+
+// User routes
+router.use('/user', userRouter);
 
 // API aliases for backward compatibility with docs
 // POST /api/v1/log -> POST /api/v1/food-logs
-router.post('/log', createFoodLog)
+router.post('/log', createFoodLog);
 
 // GET /api/v1/summary?userId=xxx&date=xxx -> wrapper for summary
-router.get('/summary', getSummary)
+router.get('/summary', getSummary);
 
-export { router as v1Router }
+export { router as v1Router };
