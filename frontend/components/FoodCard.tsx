@@ -12,6 +12,7 @@ interface FoodCardProps {
 
 export function FoodCard({ food, onClick }: FoodCardProps) {
   const [hasError, setHasError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Use image_prompt from AI if available, otherwise fallback to food name
   // We append "delicious food" to ensure better quality generation
@@ -24,13 +25,24 @@ export function FoodCard({ food, onClick }: FoodCardProps) {
       onClick={onClick}
     >
       <div className="flex gap-3">
-        <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+          {/* Loading shimmer effect */}
+          {isLoading && !hasError && (
+            <div className="absolute inset-0 bg-linear-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer" />
+          )}
+          
           {!hasError ? (
             <img
               src={imageSrc}
               alt={food.name}
-              className="w-full h-full object-cover"
-              onError={() => setHasError(true)}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setHasError(true)
+                setIsLoading(false)
+              }}
               loading="lazy"
             />
           ) : (
