@@ -2,8 +2,7 @@
 
 import { FoodSuggestion } from '@/types/api'
 import { Card } from './ui/card'
-import { useState } from 'react'
-import { Utensils } from 'lucide-react'
+import { FoodImage } from './FoodImage'
 
 interface FoodCardProps {
   food: FoodSuggestion

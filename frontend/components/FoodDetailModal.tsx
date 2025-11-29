@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -8,7 +10,10 @@ import {
   DialogTitle,
 } from './ui/dialog'
 import { Button } from './ui/button'
-import { FoodSuggestion } from '@/types/api'
+import type { FoodSuggestion } from '@/types/api'
+import { FoodImage } from './FoodImage'
+import { chatApi } from '@/lib/api'
+import { useUser } from '@/contexts/UserContext'
 
 interface FoodDetailModalProps {
   food: FoodSuggestion | null
@@ -18,16 +23,6 @@ interface FoodDetailModalProps {
   isLoading?: boolean
 }
 
-const categoryImageMap: Record<string, string> = {
-  noodle: '/images/noodle.png',
-  rice: '/images/rice.png',
-  soup: '/images/soup.png',
-  salad: '/images/salad.png',
-  fastfood: '/images/fastfood.png',
-  drink: '/images/drink.png',
-  other: '/images/default.png',
-}
-
 export function FoodDetailModal({
   food,
   open,
@@ -35,12 +30,37 @@ export function FoodDetailModal({
   onEat,
   isLoading,
 }: FoodDetailModalProps) {
-  if (!food) return null
+  const router = useRouter()
+  const { guestId, user } = useUser()
+  const [isLoadingGuide, setIsLoadingGuide] = useState(false)
 
-  const imageSrc = categoryImageMap[food.category] || categoryImageMap.other
+  if (!food) return null
 
   const handleEat = () => {
     onEat(food)
+  }
+
+  const handleShowCookingGuide = async () => {
+    setIsLoadingGuide(true)
+
+    try {
+      // Don't hardcode language - let AI auto-detect from dish name
+      const response = await chatApi.getCookingGuide({
+        guestId: guestId || undefined,
+        userId: user?.uid,
+        dishName: food.name,
+      })
+
+      if (response.success && response.data?.id) {
+        // Close modal and navigate to cooking guide page
+        onClose()
+        router.push(`/cooking-guide/${response.data.id}`)
+      }
+    } catch (error) {
+      console.error('Failed to fetch cooking guide:', error)
+    } finally {
+      setIsLoadingGuide(false)
+    }
   }
 
   return (
@@ -53,16 +73,8 @@ export function FoodDetailModal({
 
         <div className="space-y-4">
           {/* Image */}
-          <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
-            <img
-              src={imageSrc}
-              alt={food.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.src = '/images/default.png'
-              }}
-            />
+          <div className="w-full h-48 rounded-lg overflow-hidden">
+            <FoodImage food={food} className="w-full h-full" />
           </div>
 
           {/* Nutrition Info */}
@@ -113,15 +125,32 @@ export function FoodDetailModal({
             </div>
           )}
 
-          {/* Action Button */}
-          <Button
-            onClick={handleEat}
-            disabled={isLoading}
-            className="w-full"
-            size="lg"
-          >
-            {isLoading ? 'Đang lưu...' : 'Ăn món này'}
-          </Button>
+          {/* Action Buttons */}
+          <div className="space-y-2">
+            <Button
+              onClick={handleShowCookingGuide}
+              disabled={isLoadingGuide}
+              variant="outline"
+              className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              size="lg"
+            >
+              {isLoadingGuide ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⏳</span> Đang tạo hướng dẫn...
+                </span>
+              ) : (
+                '👨‍🍳 Hướng dẫn nấu ăn'
+              )}
+            </Button>
+            <Button
+              onClick={handleEat}
+              disabled={isLoading}
+              className="w-full"
+              size="lg"
+            >
+              {isLoading ? 'Đang lưu...' : 'Ăn món này'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

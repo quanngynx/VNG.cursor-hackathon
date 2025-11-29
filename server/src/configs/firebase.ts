@@ -20,11 +20,13 @@ export const initializeFirebase = (): void => {
         credential: admin.credential.cert(serviceAccountPath),
       });
 
+      // Explicitly use default settings without custom grpc setup unless needed
       firestoreDb = admin.firestore();
 
-      // Configure Firestore settings
       firestoreDb.settings({
         ignoreUndefinedProperties: true,
+        // Add explicit empty config to avoid auto-detection issues in some environments
+        databaseId: '(default)',
       });
 
       console.log('✅ Firebase Admin SDK initialized successfully');
@@ -37,9 +39,18 @@ export const initializeFirebase = (): void => {
 
 export const getFirestore = (): Firestore => {
   if (!firestoreDb) {
-    throw new Error(
-      'Firestore has not been initialized. Call initializeFirebase() first.',
-    );
+    // If accessed before explicit init (unlikely but safe fallback), try to init
+    try {
+      initializeFirebase();
+    } catch (e) {
+      // Ignore error here, let the original error propagate if needed
+    }
+
+    if (!firestoreDb) {
+      throw new Error(
+        'Firestore has not been initialized. Call initializeFirebase() first.',
+      );
+    }
   }
   return firestoreDb;
 };

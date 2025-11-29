@@ -47,4 +47,33 @@ export class UserRepository extends BaseRepository<User> {
       lastLoginAt: new Date(),
     });
   }
+
+  /**
+   * Create a user with a specific ID
+   */
+  async createWithId(
+    id: string,
+    data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<User> {
+    const docRef = this.db.collection(this.collectionName).doc(id);
+
+    const now = new Date();
+    const documentData = {
+      ...data,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await docRef.set(documentData);
+
+    const doc = await docRef.get();
+    const result = this.docToObject(doc);
+
+    if (!result) {
+      throw new Error('Failed to create document');
+    }
+
+    return result;
+  }
 }

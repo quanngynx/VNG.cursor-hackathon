@@ -38,6 +38,7 @@ export class ChatMessageRepository extends BaseRepository<ChatMessage> {
 
   /**
    * Get conversation history
+   * Note: We fetch all messages and sort in memory to avoid needing composite index
    */
   async getConversationHistory(
     userId?: string,
@@ -60,10 +61,27 @@ export class ChatMessageRepository extends BaseRepository<ChatMessage> {
       });
     }
 
-    return this.findAll({
+    // Fetch all messages without orderBy to avoid needing composite index
+    // We'll sort in memory instead
+    const allMessages = await this.findAll({
       where,
-      orderBy: { field: 'createdAt', direction: 'asc' },
-      limit,
+      // No orderBy here - will sort in memory
     });
+
+    // Sort by createdAt ascending in memory
+    const sorted = allMessages.sort((a, b) => {
+      const dateA =
+        a.createdAt instanceof Date
+          ? a.createdAt
+          : new Date(a.createdAt as string);
+      const dateB =
+        b.createdAt instanceof Date
+          ? b.createdAt
+          : new Date(b.createdAt as string);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Apply limit after sorting
+    return sorted.slice(0, limit);
   }
 }

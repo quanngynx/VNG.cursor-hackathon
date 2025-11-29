@@ -5,6 +5,11 @@ import type {
   CreateFoodLogRequest,
   DailySummary,
   ApiResponse,
+  FoodSuggestion,
+  UserHealthData,
+  UpdateUserHealthRequest,
+  CookingGuide,
+  CookingGuideRequest
 } from '@/types/api'
 
 const API_BASE_URL =
@@ -30,14 +35,58 @@ export const chatApi = {
   },
 
   getHistory: async (
-    guestId: string,
+    id: string,
     limit = 50,
+    isGuest = true,
   ): Promise<ApiResponse<unknown[]>> => {
+    const params: Record<string, unknown> = { limit }
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+    
     const response = await apiClient.get<ApiResponse<unknown[]>>(
       '/chat/history',
-      {
-        params: { guestId, limit },
-      },
+      { params },
+    )
+    return response.data
+  },
+
+  getCookingGuide: async (
+    request: CookingGuideRequest,
+  ): Promise<ApiResponse<CookingGuide>> => {
+    const response = await apiClient.post<ApiResponse<CookingGuide>>(
+      '/chat/cooking-guide',
+      request,
+    )
+    return response.data
+  },
+
+  getCookingGuideById: async (
+    id: string,
+  ): Promise<ApiResponse<CookingGuide>> => {
+    const response = await apiClient.get<ApiResponse<CookingGuide>>(
+      `/chat/cooking-guide/${id}`,
+    )
+    return response.data
+  },
+
+  getCookingGuideHistory: async (
+    id: string,
+    limit = 50,
+    isGuest = true,
+  ): Promise<ApiResponse<CookingGuide[]>> => {
+    const params: Record<string, unknown> = { limit }
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+
+    const response = await apiClient.get<ApiResponse<CookingGuide[]>>(
+      '/chat/cooking-guide/history',
+      { params },
     )
     return response.data
   },
@@ -56,18 +105,84 @@ export const foodLogApi = {
   },
 
   getSummary: async (
-    guestId: string,
+    id: string,
     date?: string,
+    isGuest = true
   ): Promise<ApiResponse<DailySummary>> => {
+    const params: Record<string, unknown> = { date }
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+    
     const response = await apiClient.get<ApiResponse<DailySummary>>(
       '/summary',
-      {
-        params: { guestId, date },
-      },
+      { params },
+    )
+    return response.data
+  },
+
+  update: async (
+    id: string,
+    data: Partial<CreateFoodLogRequest>
+  ): Promise<ApiResponse<unknown>> => {
+    const response = await apiClient.put<ApiResponse<unknown>>(
+      `/food-logs/${id}`,
+      data
+    )
+    return response.data
+  },
+
+  delete: async (
+    id: string
+  ): Promise<ApiResponse<unknown>> => {
+    const response = await apiClient.delete<ApiResponse<unknown>>(
+      `/food-logs/${id}`
+    )
+    return response.data
+  }
+}
+
+// User API
+export const userApi = {
+  getHealthData: async (
+    id: string,
+    isGuest = true
+  ): Promise<ApiResponse<UserHealthData>> => {
+    const params: Record<string, unknown> = {}
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+    
+    const response = await apiClient.get<ApiResponse<UserHealthData>>(
+      '/user/health',
+      { params }
+    )
+    return response.data
+  },
+
+  updateHealthData: async (
+    id: string,
+    data: UpdateUserHealthRequest,
+    isGuest = true
+  ): Promise<ApiResponse<UserHealthData>> => {
+    const params: Record<string, unknown> = {}
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+    
+    const response = await apiClient.put<ApiResponse<UserHealthData>>(
+      '/user/health',
+      data,
+      { params }
     )
     return response.data
   },
 }
 
 export default apiClient
-

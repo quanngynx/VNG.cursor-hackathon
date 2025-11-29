@@ -59,10 +59,16 @@ export abstract class BaseRepository<T extends { id: string }> {
 
     // Convert Firestore Timestamps to Dates
     const convertedData = { ...data };
-    if (convertedData.createdAt && typeof convertedData.createdAt.toDate === 'function') {
+    if (
+      convertedData.createdAt &&
+      typeof convertedData.createdAt.toDate === 'function'
+    ) {
       convertedData.createdAt = convertedData.createdAt.toDate();
     }
-    if (convertedData.updatedAt && typeof convertedData.updatedAt.toDate === 'function') {
+    if (
+      convertedData.updatedAt &&
+      typeof convertedData.updatedAt.toDate === 'function'
+    ) {
       convertedData.updatedAt = convertedData.updatedAt.toDate();
     }
 
@@ -72,7 +78,10 @@ export abstract class BaseRepository<T extends { id: string }> {
     const result = this.schema.safeParse(finalData);
 
     if (!result.success) {
-      console.error(`Validation error for document ${doc.id}:`, JSON.stringify(result.error, null, 2));
+      console.error(
+        `Validation error for document ${doc.id}:`,
+        JSON.stringify(result.error, null, 2),
+      );
       // Try to return data anyway if validation fails on timestamps but data is otherwise usable
       return finalData;
     }

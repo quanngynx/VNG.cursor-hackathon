@@ -10,36 +10,50 @@ export class FoodLogRepository extends BaseRepository<FoodLog> {
   }
 
   /**
+   * Helper to sort logs by date desc in memory
+   */
+  private sortLogs(logs: FoodLog[]): FoodLog[] {
+    return logs.sort((a, b) => {
+      const dateA = new Date(a.loggedAt).getTime();
+      const dateB = new Date(b.loggedAt).getTime();
+      return dateB - dateA;
+    });
+  }
+
+  /**
    * Find food logs by user ID
    */
   async findByUserId(userId: string): Promise<FoodLog[]> {
-    return this.findAll({
+    const logs = await this.findAll({
       where: [{ field: 'userId', operator: '==', value: userId }],
-      orderBy: { field: 'loggedAt', direction: 'desc' },
+      // orderBy removed to avoid index requirements
     });
+    return this.sortLogs(logs);
   }
 
   /**
    * Find food logs by guest ID
    */
   async findByGuestId(guestId: string): Promise<FoodLog[]> {
-    return this.findAll({
+    const logs = await this.findAll({
       where: [{ field: 'guestId', operator: '==', value: guestId }],
-      orderBy: { field: 'loggedAt', direction: 'desc' },
+      // orderBy removed to avoid index requirements
     });
+    return this.sortLogs(logs);
   }
 
   /**
    * Find food logs by meal type
    */
   async findByMealType(userId: string, mealType: string): Promise<FoodLog[]> {
-    return this.findAll({
+    const logs = await this.findAll({
       where: [
         { field: 'userId', operator: '==', value: userId },
         { field: 'mealType', operator: '==', value: mealType },
       ],
-      orderBy: { field: 'loggedAt', direction: 'desc' },
+      // orderBy removed to avoid index requirements
     });
+    return this.sortLogs(logs);
   }
 
   /**
@@ -50,14 +64,18 @@ export class FoodLogRepository extends BaseRepository<FoodLog> {
     startDate: Date,
     endDate: Date,
   ): Promise<FoodLog[]> {
-    return this.findAll({
-      where: [
-        { field: 'userId', operator: '==', value: userId },
-        { field: 'loggedAt', operator: '>=', value: startDate },
-        { field: 'loggedAt', operator: '<=', value: endDate },
-      ],
-      orderBy: { field: 'loggedAt', direction: 'desc' },
+    // We fetch all logs for the user and filter in memory to avoid complex composite index requirements
+    // This is acceptable for a hackathon/small scale. For production, use proper indexes.
+    const allLogs = await this.findAll({
+      where: [{ field: 'userId', operator: '==', value: userId }],
     });
+
+    const logs = allLogs.filter((log) => {
+      const logDate = new Date(log.loggedAt);
+      return logDate >= startDate && logDate <= endDate;
+    });
+
+    return this.sortLogs(logs);
   }
 
   /**
