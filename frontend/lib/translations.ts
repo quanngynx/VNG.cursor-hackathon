@@ -43,6 +43,7 @@ export interface Translations {
     newChatCreated: string
     message: string
     messages: string
+    pressEnter: string
   }
 
   // Dashboard
@@ -158,6 +159,7 @@ export const translations: Record<Language, Translations> = {
       newChatCreated: 'Đã tạo cuộc trò chuyện mới',
       message: 'tin nhắn',
       messages: 'tin nhắn',
+      pressEnter: 'Nhấn Enter để gửi, Shift+Enter để xuống dòng',
     },
     dashboard: {
       foodLog: 'Nhật ký ăn uống',
@@ -266,6 +268,7 @@ export const translations: Record<Language, Translations> = {
       newChatCreated: 'New conversation created',
       message: 'message',
       messages: 'messages',
+      pressEnter: 'Press Enter to send, Shift+Enter for new line',
     },
     dashboard: {
       foodLog: 'Food Log',
