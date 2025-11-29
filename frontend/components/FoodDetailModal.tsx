@@ -14,6 +14,8 @@ import type { FoodSuggestion } from '@/types/api'
 import { FoodImage } from './FoodImage'
 import { chatApi } from '@/lib/api'
 import { useUser } from '@/contexts/UserContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { Flame, ChefHat, Utensils, Loader2, Sparkles } from 'lucide-react'
 
 interface FoodDetailModalProps {
   food: FoodSuggestion | null
@@ -32,6 +34,7 @@ export function FoodDetailModal({
 }: FoodDetailModalProps) {
   const router = useRouter()
   const { guestId, user } = useUser()
+  const { t } = useLanguage()
   const [isLoadingGuide, setIsLoadingGuide] = useState(false)
 
   if (!food) return null
@@ -44,7 +47,6 @@ export function FoodDetailModal({
     setIsLoadingGuide(true)
 
     try {
-      // Don't hardcode language - let AI auto-detect from dish name
       const response = await chatApi.getCookingGuide({
         guestId: guestId || undefined,
         userId: user?.uid,
@@ -52,7 +54,6 @@ export function FoodDetailModal({
       })
 
       if (response.success && response.data?.id) {
-        // Close modal and navigate to cooking guide page
         onClose()
         router.push(`/cooking-guide/${response.data.id}`)
       }
@@ -65,90 +66,95 @@ export function FoodDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl">{food.name}</DialogTitle>
-          <DialogDescription>{food.description}</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Image */}
-          <div className="w-full h-48 rounded-lg overflow-hidden">
-            <FoodImage food={food} className="w-full h-full" />
+      <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-white dark:bg-gray-900">
+        {/* Hero Image */}
+        <div className="relative w-full h-56 overflow-hidden">
+          <FoodImage food={food} className="w-full h-full object-cover" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          
+          {/* Calorie badge */}
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-lg">
+            <Flame className="w-4 h-4 text-orange-500" />
+            <span className="text-sm font-bold text-foreground">{food.calories} kcal</span>
           </div>
+        </div>
 
-          {/* Nutrition Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">
-                {food.calories}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Calories
-              </div>
-            </div>
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
-                {food.macros.protein}g
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Protein
-              </div>
-            </div>
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
-                {food.macros.carbs}g
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Carbs
-              </div>
-            </div>
-            <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">
-                {food.macros.fat}g
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Fat
-              </div>
-            </div>
+        <div className="p-5 space-y-5">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-xl font-bold text-gradient">{food.name}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">{food.description}</DialogDescription>
+          </DialogHeader>
+
+          {/* Macros Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            <MacroCard 
+              label={t.food.protein}
+              value={food.macros.protein}
+              color="blue"
+            />
+            <MacroCard 
+              label={t.food.carbs}
+              value={food.macros.carbs}
+              color="amber"
+            />
+            <MacroCard 
+              label={t.food.fat}
+              value={food.macros.fat}
+              color="rose"
+            />
           </div>
 
           {/* Ingredients */}
           {food.ingredients && food.ingredients.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-sm mb-2">Nguyên liệu chính:</h4>
-              <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400">
+            <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                {t.food.ingredients}
+              </h4>
+              <div className="flex flex-wrap gap-2">
                 {food.ingredients.map((ingredient, index) => (
-                  <li key={index}>{ingredient}</li>
+                  <span 
+                    key={index}
+                    className="px-3 py-1 text-xs font-medium rounded-full bg-white dark:bg-gray-800 border border-border/50 text-muted-foreground"
+                  >
+                    {ingredient}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="space-y-2">
+          <div className="flex gap-3 pt-2">
             <Button
               onClick={handleShowCookingGuide}
               disabled={isLoadingGuide}
               variant="outline"
-              className="w-full border-orange-300 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-              size="lg"
+              className="flex-1 h-12 rounded-xl border-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
             >
               {isLoadingGuide ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⏳</span> Đang tạo hướng dẫn...
-                </span>
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                '👨‍🍳 Hướng dẫn nấu ăn'
+                <>
+                  <ChefHat className="w-4 h-4 mr-2" />
+                  Hướng dẫn nấu
+                </>
               )}
             </Button>
             <Button
               onClick={handleEat}
               disabled={isLoading}
-              className="w-full"
-              size="lg"
+              className="flex-1 h-12 rounded-xl bg-gradient-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
             >
-              {isLoading ? 'Đang lưu...' : 'Ăn món này'}
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Utensils className="w-4 h-4 mr-2" />
+                  {t.food.eatThis}
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -157,3 +163,43 @@ export function FoodDetailModal({
   )
 }
 
+function MacroCard({ 
+  label, 
+  value, 
+  color 
+}: { 
+  label: string
+  value: number
+  color: 'blue' | 'amber' | 'rose'
+}) {
+  const colorClasses = {
+    blue: {
+      bg: 'bg-blue-50 dark:bg-blue-950/30',
+      text: 'text-blue-600 dark:text-blue-400',
+      border: 'border-blue-100 dark:border-blue-900/50'
+    },
+    amber: {
+      bg: 'bg-amber-50 dark:bg-amber-950/30',
+      text: 'text-amber-600 dark:text-amber-400',
+      border: 'border-amber-100 dark:border-amber-900/50'
+    },
+    rose: {
+      bg: 'bg-rose-50 dark:bg-rose-950/30',
+      text: 'text-rose-600 dark:text-rose-400',
+      border: 'border-rose-100 dark:border-rose-900/50'
+    },
+  }
+
+  const styles = colorClasses[color]
+
+  return (
+    <div className={`text-center p-3 rounded-xl ${styles.bg} border ${styles.border} transition-all duration-300 hover:scale-105`}>
+      <div className={`text-2xl font-bold ${styles.text}`}>
+        {value}g
+      </div>
+      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mt-0.5">
+        {label}
+      </div>
+    </div>
+  )
+}
