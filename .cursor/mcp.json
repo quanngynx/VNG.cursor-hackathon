@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "eslint": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@eslint/mcp@latest"
+      ],
+      "env": {}
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
+    },
+    "mcp-ui Docs": {
+      "url": "https://gitmcp.io/idosal/mcp-ui"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-5a607a61-7694-4081-a738-f7b171f62848"
+      }
+    }
+  }
+}
