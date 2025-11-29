@@ -7,7 +7,8 @@ import type {
   ApiResponse,
 } from '@/types/api'
 
-const API_BASE_URL = ''
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL_SERVER || 'http://localhost:3002'
 
 const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,

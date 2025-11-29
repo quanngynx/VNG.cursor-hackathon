@@ -17,8 +17,8 @@ export class App {
 
   public initialize(): void {
     this.initializeFirebase();
-    this.initializeRoutes();
     this.initializeMiddlewares();
+    this.initializeRoutes();
   }
 
   private initializeFirebase(): void {

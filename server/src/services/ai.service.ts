@@ -41,8 +41,8 @@ export class AIService {
       apiKey,
     })
 
-    // Use model from env or default to openai/gpt-oss-20
-    this.model = process.env.GROQ_MODEL || 'openai/gpt-oss-20'
+    // Use model from env or default to llama-3.1-70b-versatile
+    this.model = process.env.GROQ_MODEL || 'openai/gpt-oss-20b'
   }
 
   /**
