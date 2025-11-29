@@ -1,0 +1,53 @@
+---
+description: React check list Instructions
+alwaysApply: true
+---
+
+### Task
+
+Perform a checklist review of all React hooks usage (`useEffect`, `useCallback`, `useMemo`, `useLayoutEffect`, and `memo`).
+
+Focus on detecting:
+
+- Critical bugs or incorrect dependency arrays that can cause unexpected re-renders or skipped updates.
+- Memory leaks caused by missing cleanup functions in `useEffect`.
+- Inefficient re-creations of functions or values due to missing or excessive dependencies.
+- Incorrect usage of `React.memo` or stale closures causing outdated props/state usage.
+- Overuse of `useMemo` or `useCallback` leading to unnecessary complexity or overhead.
+- Missing usage of `AbortController` in async effects (especially fetch calls).
+
+### Checklist
+
+For each hook found:
+
+1. **useEffect**
+   - [ ] Are all dependencies properly listed in the dependency array?
+   - [ ] Is there a cleanup function when subscribing to events, intervals, or async operations?
+   - [ ] Does the effect rely on stale props or state due to missing dependencies?
+   - [ ] Is it triggering re-renders or API calls more often than necessary?
+   - [ ] **Stale closures:** Is it using outdated state or props due to incomplete deps?
+
+2. **useCallback**
+   - [ ] Are all dependencies correct and minimal?
+   - [ ] Is it actually needed (i.e., passed to memoized child components)?
+   - [ ] Could it lead to stale closures if dependencies are incomplete?
+   - [ ] Consider replacing with inline function if not passed to children.
+
+3. **useMemo**
+   - [ ] Is memoization justified (expensive computation or derived data)?
+   - [ ] Are dependencies accurate and stable?
+   - [ ] Does the computation rely on external mutable references?
+
+4. **React.memo**
+   - [ ] Does the memoized component receive stable props?
+   - [ ] Is deep comparison needed or missing (custom `areEqual`)?
+   - [ ] Could `memo` be masking a missing dependency problem upstream?
+   - [ ] Avoid overusing `memo` if props always change.
+
+5. **General**
+   - [ ] Any async effect missing cancellation logic?
+   - [ ] No nested state updates inside render or effect that can cause re-render loops.
+   - [ ] All subscriptions, listeners, intervals, and observers are cleaned on unmount.
+   - [ ] Async logic inside effects uses **`AbortController`** or equivalent cleanup pattern.
+   - [ ] Check for missing dependency arrays (`[]`) that should limit effect execution.
+   - [ ] State setters are not inside loops or callbacks without stable refs.
