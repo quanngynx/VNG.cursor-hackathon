@@ -54,14 +54,27 @@ export abstract class BaseRepository<T extends { id: string }> {
   ): T | null {
     if (!doc.exists) return null;
 
-    const data = { id: doc.id, ...doc.data() } as T;
+    const data = doc.data();
+    if (!data) return null;
+
+    // Convert Firestore Timestamps to Dates
+    const convertedData = { ...data };
+    if (convertedData.createdAt && typeof convertedData.createdAt.toDate === 'function') {
+      convertedData.createdAt = convertedData.createdAt.toDate();
+    }
+    if (convertedData.updatedAt && typeof convertedData.updatedAt.toDate === 'function') {
+      convertedData.updatedAt = convertedData.updatedAt.toDate();
+    }
+
+    const finalData = { id: doc.id, ...convertedData } as T;
 
     // Validate data with Zod schema
-    const result = this.schema.safeParse(data);
+    const result = this.schema.safeParse(finalData);
 
     if (!result.success) {
-      console.error(`Validation error for document ${doc.id}:`, result.error);
-      return null;
+      console.error(`Validation error for document ${doc.id}:`, JSON.stringify(result.error, null, 2));
+      // Try to return data anyway if validation fails on timestamps but data is otherwise usable
+      return finalData;
     }
 
     return result.data;

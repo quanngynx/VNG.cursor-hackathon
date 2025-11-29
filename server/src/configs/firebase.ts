@@ -9,9 +9,9 @@ let firestoreDb: Firestore;
 export const initializeFirebase = (): void => {
   try {
     // Path to your Firebase service account key
+    // File should be in the server directory or root directory
     const serviceAccountPath = path.join(
       process.cwd(),
-      '..',
       'cursor-hackathon-2e617-firebase-adminsdk-fbsvc-93b16413db.json',
     );
 
