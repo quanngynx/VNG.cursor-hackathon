@@ -12,6 +12,7 @@ export interface FoodSuggestion {
   description: string
   category: 'noodle' | 'rice' | 'soup' | 'salad' | 'fastfood' | 'drink' | 'other'
   ingredients?: string[]
+  image_prompt?: string
 }
 
 export interface ChatResponse {

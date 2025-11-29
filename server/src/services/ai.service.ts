@@ -14,6 +14,7 @@ const foodSuggestionSchema = z.object({
   description: z.string(),
   category: z.enum(['noodle', 'rice', 'soup', 'salad', 'fastfood', 'drink', 'other']),
   ingredients: z.array(z.string()).optional(),
+  image_prompt: z.string().describe('Short English description for image generation (max 5 words)').optional(),
 })
 
 const chatResponseSchema = z.object({
@@ -57,6 +58,7 @@ export class AIService {
 - description: brief description in Vietnamese (string)
 - category: one of "noodle", "rice", "soup", "salad", "fastfood", "drink", "other" (string)
 - ingredients: optional array of main ingredients (array of strings)
+- image_prompt: short English description of the food for image generation (e.g. "Pho Bo beef noodle soup")
 
 Return ONLY valid JSON, no markdown, no code blocks, no explanations.`
   }
