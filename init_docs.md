@@ -1,4 +1,5 @@
-📂 PROJECT DOCUMENTATION: ZALO NUTRICHAT
+# 📂 PROJECT DOCUMENTATION: ZALO NUTRICHAT
+
 1. Project Overview
 Zalo NutriChat is a web application (optimized for Zalo Mini App integration or Mobile Web) that acts as an AI-powered Nutrition Assistant. It helps users decide what to eat based on nutritional needs, weather, or preferences, and tracks their daily intake using Generative AI.
 2. Tech Stack
@@ -24,8 +25,6 @@ graph LR
     AI -->|Structured JSON| BE
     BE -->|Response| FE
     FE -->|Store Data| LocalStorage[Browser Storage] (MVP)
-
-
 
 4. Feature Specifications
 Feature A: AI Nutrition Chat (Core)
@@ -53,7 +52,8 @@ History list of selected foods.
 5. API Documentation (FastAPI)
 5.1. Pydantic Models
 Python
-# schemas.py
+
+## schemas.py
 
 from pydantic import BaseModel
 from typing import List, Optional
@@ -79,7 +79,6 @@ class FoodItem(BaseModel):
 class ChatResponse(BaseModel):
     reply_text: str # Short conversational intro from AI
     suggested_foods: List[FoodItem]
-
 
 5.2. Endpoints
 POST /api/chat
@@ -109,8 +108,6 @@ Plaintext
   /types.ts         # TypeScript interfaces mirroring Pydantic models
   /store.ts         # State management (store selected foods)
 
-
-
 7. Implementation Roadmap (Hackathon Strategy)
 Phase 1: Backend Core (45 mins)
 Initialize FastAPI & Groq Client.
@@ -130,12 +127,12 @@ Ensure mobile responsiveness.
 8. Environment Variables
 Create a .env file:
 Code snippet
-# Backend
+
+## Backend
+
 GROQ_API_KEY=gsk_...
 ALLOWED_ORIGINS=*
 
-# Frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000 # Replace with ngrok URL for Zalo integration
+## Frontend
 
-
-
+NEXT_PUBLIC_API_URL=<http://localhost:8000> # Replace with ngrok URL for Zalo integration

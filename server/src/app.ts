@@ -6,6 +6,7 @@ import { corsOptions } from './configs/cors';
 import { requestLoggingMiddleware } from './middlewares/request-context.middleware';
 import { v1Router } from './routes/router.v1';
 import { BRAND_APP_NAME } from './venv';
+import { initializeFirebase } from './configs/firebase';
 
 export class App {
   public app: Express;
@@ -15,8 +16,18 @@ export class App {
   }
 
   public initialize(): void {
+    this.initializeFirebase();
     this.initializeRoutes();
     this.initializeMiddlewares();
+  }
+
+  private initializeFirebase(): void {
+    try {
+      initializeFirebase();
+    } catch (error) {
+      console.error('Failed to initialize Firebase:', error);
+      throw error;
+    }
   }
 
   private initializeRoutes(): void {
