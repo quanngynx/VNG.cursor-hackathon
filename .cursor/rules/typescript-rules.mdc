@@ -1,0 +1,17 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# Type Safety Guidelines
+
+- Do not use any. If necessary, use unknown or create specific types/interfaces.
+- Prefer type annotation over type assertion; limit the use of assertions only when unavoidable.
+- Reduce redundant or repetitive code after generation.
+- Keep functions small and focused.
+- Use consistent naming conventions.
+- TypeScript strict mode.
+- Single quotes, no semicolons.
+- Use functional patterns where possible.
+- Validate inputs or controller using schema-based validation (Zod).
