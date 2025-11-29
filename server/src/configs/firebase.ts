@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { Firestore } from '@google-cloud/firestore';
 import path from 'path';
+import { BRAND_APP_NAME } from '@/venv';
 
 // Initialize Firebase Admin SDK
 let firebaseApp: admin.app.App;
@@ -27,10 +28,12 @@ export const initializeFirebase = (): void => {
         ignoreUndefinedProperties: true,
       });
 
-      console.log('✅ Firebase Admin SDK initialized successfully');
+      console.log(
+        `[${BRAND_APP_NAME}] Firebase Admin SDK initialized successfully`,
+      );
     }
   } catch (error) {
-    console.error('❌ Failed to initialize Firebase:', error);
+    console.error(`[${BRAND_APP_NAME}] Failed to initialize Firebase:`, error);
     throw error;
   }
 };
