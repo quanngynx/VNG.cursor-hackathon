@@ -34,7 +34,7 @@ export class App {
     this.app.get('/', (req, res) => {
       res.status(200).json({ message: `[${BRAND_APP_NAME}] API is running` });
     });
-    this.app.use('/api', v1Router);
+    this.app.use('/api/v1', v1Router);
   }
 
   private initializeMiddlewares(): void {

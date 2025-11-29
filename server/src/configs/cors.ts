@@ -9,16 +9,15 @@ export const corsOptions: CorsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
+    // Allow all origins in development
+    return callback(null, true);
+
+    /*
     const allowedOrigins = [
       NEXT_PUBLIC_API_URL_CLIENTS,
       `http://localhost:${NEXT_PUBLIC_API_PORT_CLIENTS}`,
     ];
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    */
   },
   credentials: true,
   optionsSuccessStatus: 200, // Some legacy browsers choke on 204
