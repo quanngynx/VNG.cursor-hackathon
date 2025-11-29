@@ -5,6 +5,7 @@ import type {
   CreateFoodLogRequest,
   DailySummary,
   ApiResponse,
+  FoodSuggestion
 } from '@/types/api'
 
 const API_BASE_URL =
@@ -56,18 +57,43 @@ export const foodLogApi = {
   },
 
   getSummary: async (
-    guestId: string,
+    id: string,
     date?: string,
+    isGuest = true
   ): Promise<ApiResponse<DailySummary>> => {
+    const params: any = { date }
+    if (isGuest) {
+      params.guestId = id
+    } else {
+      params.userId = id
+    }
+    
     const response = await apiClient.get<ApiResponse<DailySummary>>(
       '/summary',
-      {
-        params: { guestId, date },
-      },
+      { params },
     )
     return response.data
   },
+
+  update: async (
+    id: string,
+    data: Partial<CreateFoodLogRequest>
+  ): Promise<ApiResponse<unknown>> => {
+    const response = await apiClient.put<ApiResponse<unknown>>(
+      `/food-logs/${id}`,
+      data
+    )
+    return response.data
+  },
+
+  delete: async (
+    id: string
+  ): Promise<ApiResponse<unknown>> => {
+    const response = await apiClient.delete<ApiResponse<unknown>>(
+      `/food-logs/${id}`
+    )
+    return response.data
+  }
 }
 
 export default apiClient
-

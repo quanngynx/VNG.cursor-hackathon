@@ -1,11 +1,20 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { 
+  User, 
+  signInWithPopup, 
+  signOut as firebaseSignOut, 
+  onAuthStateChanged 
+} from 'firebase/auth'
+import { auth, googleProvider } from '@/lib/firebase'
 
 interface UserContextType {
+  user: User | null
   guestId: string | null
   isLoading: boolean
-  setGuestId: (id: string) => void
+  login: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -17,30 +26,50 @@ function generateGuestId(): string {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
   const [guestId, setGuestIdState] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check localStorage for existing guestId
-    const stored = localStorage.getItem(GUEST_ID_KEY)
-    if (stored) {
-      setGuestIdState(stored)
+    // Initialize guest ID
+    const storedGuestId = localStorage.getItem(GUEST_ID_KEY)
+    if (storedGuestId) {
+      setGuestIdState(storedGuestId)
     } else {
-      // Generate new guestId
       const newGuestId = generateGuestId()
       localStorage.setItem(GUEST_ID_KEY, newGuestId)
       setGuestIdState(newGuestId)
     }
-    setIsLoading(false)
+
+    // Listen for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+      setIsLoading(false)
+    })
+
+    return () => unsubscribe()
   }, [])
 
-  const setGuestId = (id: string) => {
-    localStorage.setItem(GUEST_ID_KEY, id)
-    setGuestIdState(id)
+  const login = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (error) {
+      console.error('Login failed:', error)
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await firebaseSignOut(auth)
+    } catch (error) {
+      console.error('Logout failed:', error)
+      throw error
+    }
   }
 
   return (
-    <UserContext.Provider value={{ guestId, isLoading, setGuestId }}>
+    <UserContext.Provider value={{ user, guestId, isLoading, login, logout }}>
       {children}
     </UserContext.Provider>
   )
@@ -53,4 +82,3 @@ export function useUser() {
   }
   return context
 }
-

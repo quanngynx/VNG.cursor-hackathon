@@ -78,6 +78,11 @@ export const getSummary = async (
       id: log.id,
       foodName: log.foodName,
       calories: log.nutrition.calories,
+      macros: {
+        protein: log.nutrition.protein,
+        carbs: log.nutrition.carbs,
+        fat: log.nutrition.fat,
+      },
       timestamp: log.loggedAt,
       mealType: log.mealType,
     }))

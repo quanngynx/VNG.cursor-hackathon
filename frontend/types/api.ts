@@ -40,6 +40,11 @@ export interface FoodHistoryItem {
   id: string
   foodName: string
   calories: number
+  macros: {
+    protein: number
+    carbs: number
+    fat: number
+  }
   timestamp: string | Date
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'
 }
