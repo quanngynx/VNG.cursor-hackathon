@@ -19,7 +19,7 @@ interface Message {
 }
 
 export default function ChatPage() {
-  const { guestId, isLoading: userLoading } = useUser()
+  const { user, guestId, isLoading: userLoading } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFood, setSelectedFood] = useState<FoodSuggestion | null>(null)
@@ -35,7 +35,7 @@ export default function ChatPage() {
   }, [messages])
 
   const handleSend = async (text: string) => {
-    if (!guestId || userLoading) return
+    if ((!user && !guestId) || userLoading) return
 
     // Add user message
     const userMessage: Message = {
@@ -49,7 +49,8 @@ export default function ChatPage() {
 
     try {
       const response = await chatApi.sendMessage({
-        guestId,
+        guestId: guestId || 'guest', // Fallback
+        userId: user?.uid,
         message: text,
       })
 
@@ -83,7 +84,7 @@ export default function ChatPage() {
   }
 
   const handleEat = async (food: FoodSuggestion) => {
-    if (!guestId) return
+    if (!user && !guestId) return
 
     setIsLogging(true)
 
@@ -96,7 +97,8 @@ export default function ChatPage() {
       else if (hour >= 17 && hour < 21) mealType = 'dinner'
 
       const response = await foodLogApi.create({
-        guestId,
+        guestId: user ? undefined : guestId!,
+        userId: user ? user.uid : (guestId || 'guest'), // Required by schema
         foodName: food.name,
         mealType,
         portion: '1 phần',
@@ -174,7 +176,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <ChatInput onSend={handleSend} disabled={isLoading || !guestId} />
+      <ChatInput onSend={handleSend} disabled={isLoading || (!user && !guestId)} />
 
       {/* Food Detail Modal */}
       <FoodDetailModal
