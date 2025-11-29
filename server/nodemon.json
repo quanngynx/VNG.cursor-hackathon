@@ -8,7 +8,7 @@
     "NODE_ENV": "development",
     "TS_NODE_PROJECT": "tsconfig.app.json",
     "TS_NODE_TRANSPILE_ONLY": "true",
-    "DOTENV_CONFIG_PATH": ".env",
+    "DOTENV_CONFIG_PATH": "../.env",
     "GRPC_DNS_RESOLVER": "native"
   },
   "delay": "1000",

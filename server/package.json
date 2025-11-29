@@ -15,7 +15,7 @@
         "clean": "rm -rf dist .tsbuildinfo",
         "lint": "eslint src --ext .ts",
         "lint:fix": "eslint src --ext .ts --fix",
-        "seed": "node -r dotenv/config -r ts-node/register/transpile-only -r tsconfig-paths/register src/scripts/seed-data.ts"
+        "seed": "DOTENV_CONFIG_PATH=../.env node -r dotenv/config -r ts-node/register/transpile-only -r tsconfig-paths/register src/scripts/seed-data.ts"
     },
     "dependencies": {
         "@google-cloud/firestore": "^8.0.0",
