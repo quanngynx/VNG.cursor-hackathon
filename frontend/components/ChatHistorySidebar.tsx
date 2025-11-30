@@ -1,28 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { MessageSquare, X, Loader2, Clock } from 'lucide-react'
+import { MessageSquare, X, Loader2, Clock, RefreshCw } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { chatApi } from '@/lib/api'
-
-interface ChatHistoryItem {
-  id: string
-  message: string
-  role: 'user' | 'assistant'
-  createdAt: string | Date
-  metadata?: unknown
-}
-
-interface Conversation {
-  id: string
-  firstMessage: string
-  lastMessage: string
-  timestamp: Date
-  messageCount: number
-  messages: ChatHistoryItem[]
-}
+import { useChatHistory, type Conversation, type ChatHistoryItem } from '@/hooks/useQueries'
 
 interface ConversationMessage {
   id: string
@@ -34,54 +16,27 @@ interface ConversationMessage {
 interface ChatHistorySidebarProps {
   isOpen: boolean
   onClose: () => void
-  guestId: string | null
-  userId?: string | null
   onLoadConversation?: (messages: ConversationMessage[]) => void
+  /** @deprecated No longer needed - hook uses UserContext */
+  guestId?: string | null
+  /** @deprecated No longer needed - hook uses UserContext */
+  userId?: string | null
 }
 
 export function ChatHistorySidebar({
   isOpen,
   onClose,
-  guestId,
-  userId,
   onLoadConversation,
 }: ChatHistorySidebarProps) {
   const { t, language } = useLanguage()
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    if (isOpen && (guestId || userId)) {
-      loadHistory()
-    }
-  }, [isOpen, guestId, userId])
-
-  const loadHistory = async () => {
-    if (!guestId && !userId) return
-
-    setIsLoading(true)
-    try {
-      const id = userId || guestId!
-      const isGuest = !!guestId && !userId
-      const response = await chatApi.getHistory(id, 200, isGuest)
-      if (response.success && response.data) {
-        const items = (response.data as ChatHistoryItem[]).map((item) => ({
-          id: item.id || Date.now().toString(),
-          message: item.message || '',
-          role: item.role || 'user',
-          createdAt: item.createdAt || new Date(),
-          metadata: item.metadata,
-        }))
-        
-        const grouped = groupMessagesIntoConversations(items)
-        setConversations(grouped)
-      }
-    } catch (error) {
-      console.error('Failed to load chat history:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  
+  // Auto-fetch chat history on mount with caching (limited to 10 conversations)
+  const { 
+    data: conversations = [], 
+    isLoading, 
+    isFetching,
+    refetch 
+  } = useChatHistory(100)
 
   const formatDate = (date: string | Date) => {
     const d = typeof date === 'string' ? new Date(date) : date
@@ -114,57 +69,9 @@ export function ChatHistorySidebar({
     return text.substring(0, maxLength) + '...'
   }
 
-  const groupMessagesIntoConversations = (messages: ChatHistoryItem[]): Conversation[] => {
-    if (messages.length === 0) return []
-
-    const conversations: Conversation[] = []
-    let currentConversation: ChatHistoryItem[] = []
-    const CONVERSATION_GAP_MS = 5 * 60 * 1000 
-
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i]
-      const prevMsg = messages[i - 1]
-
-      if (prevMsg) {
-        const msgTime = new Date(msg.createdAt).getTime()
-        const prevTime = new Date(prevMsg.createdAt).getTime()
-        const gap = Math.abs(msgTime - prevTime)
-
-        if (gap > CONVERSATION_GAP_MS) {
-          if (currentConversation.length > 0) {
-            conversations.push(createConversation(currentConversation))
-            currentConversation = []
-          }
-        }
-      }
-
-      currentConversation.push(msg)
-    }
-
-    if (currentConversation.length > 0) {
-      conversations.push(createConversation(currentConversation))
-    }
-
-    return conversations.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }
-
-  const createConversation = (messages: ChatHistoryItem[]): Conversation => {
-    const firstUserMessage = messages.find(m => m.role === 'user')
-    const lastMessage = messages[messages.length - 1]
-    
-    return {
-      id: `conv-${messages[0].id}`,
-      firstMessage: firstUserMessage?.message || messages[0].message,
-      lastMessage: lastMessage.message,
-      timestamp: new Date(messages[0].createdAt),
-      messageCount: messages.length,
-      messages: messages,
-    }
-  }
-
   const handleConversationClick = (conversation: Conversation) => {
     if (onLoadConversation && conversation.messages.length > 0) {
-      const chatMessages: ConversationMessage[] = conversation.messages.map((msg, index) => ({
+      const chatMessages: ConversationMessage[] = conversation.messages.map((msg: ChatHistoryItem, index: number) => ({
         id: msg.id || `msg-${Date.now()}-${index}`,
         text: msg.message || '',
         isUser: msg.role === 'user',
@@ -201,16 +108,33 @@ export function ChatHistorySidebar({
             <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <MessageSquare className="h-4 w-4 text-white" />
             </div>
-            <h2 className="font-bold text-lg">{t.chat.history}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-lg">{t.chat.history}</h2>
+              {isFetching && !isLoading && (
+                <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+              )}
+            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="lg:hidden rounded-xl hover:bg-muted"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="rounded-xl hover:bg-muted h-8 w-8"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden rounded-xl hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* History List */}

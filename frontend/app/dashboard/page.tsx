@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useUser } from '@/contexts/UserContext'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { foodLogApi, userApi } from '@/lib/api'
-import { DailySummary, FoodHistoryItem } from '@/types/api'
+import { 
+  useDailySummary, 
+  useHealthData, 
+  useUpdateHealthData,
+  useCreateFoodLog,
+  useUpdateFoodLog,
+  useDeleteFoodLog
+} from '@/hooks/useQueries'
+import { FoodHistoryItem, CreateFoodLogRequest } from '@/types/api'
 import { CalorieProgress } from '@/components/CalorieProgress'
 import { NutriChart } from '@/components/NutriChart'
 import { FoodHistoryList } from '@/components/FoodHistoryList'
@@ -12,7 +19,7 @@ import { Calendar } from '@/components/Calendar'
 import { HealthMetrics } from '@/components/HealthMetrics'
 import { HealthMetricsDialog } from '@/components/HealthMetricsDialog'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { Loader2, Plus, LogOut, LogIn, Share2, Calendar as CalendarIcon } from 'lucide-react'
+import { Loader2, Plus, LogOut, LogIn, Share2, Calendar as CalendarIcon, RefreshCw } from 'lucide-react'
 import { BottomNav } from '@/components/BottomNav'
 import { Button } from '@/components/ui/button'
 import { EditFoodDialog } from '@/components/EditFoodDialog'
@@ -22,69 +29,37 @@ import { toast } from 'sonner'
 export default function DashboardPage() {
   const { user, guestId, isLoading: userLoading, login, logout } = useUser()
   const { t } = useLanguage()
-  const [summary, setSummary] = useState<DailySummary | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [showCalendar, setShowCalendar] = useState(false)
-  
-  // Health metrics
-  const [height, setHeight] = useState<number | undefined>(undefined)
-  const [weight, setWeight] = useState<number | undefined>(undefined)
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | undefined>(undefined)
-  const [isLoadingHealth, setIsLoadingHealth] = useState(true)
   const [isHealthDialogOpen, setIsHealthDialogOpen] = useState(false)
   
   // Dialog states
   const [editingItem, setEditingItem] = useState<FoodHistoryItem | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
 
-  const fetchSummary = useCallback(async () => {
-    if ((!user && !guestId) || userLoading) return
+  // Cached queries - data persists across navigation!
+  const { 
+    data: summary, 
+    isLoading: isSummaryLoading,
+    isFetching: isSummaryFetching,
+    refetch: refetchSummary
+  } = useDailySummary(date)
+  
+  const { 
+    data: healthData, 
+    isLoading: isHealthLoading 
+  } = useHealthData()
+  
+  // Mutations
+  const updateHealthMutation = useUpdateHealthData()
+  const createFoodMutation = useCreateFoodLog()
+  const updateFoodMutation = useUpdateFoodLog()
+  const deleteFoodMutation = useDeleteFoodLog()
 
-    setIsLoading(true)
+  const handleUpdate = async (id: string, data: Partial<CreateFoodLogRequest>) => {
     try {
-      const id = user ? user.uid : guestId!
-      const response = await foodLogApi.getSummary(id, date, !user)
-      if (response.success && response.data) {
-        setSummary(response.data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch summary:', error)
-      toast.error(t.dashboard.cannotLoadData)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user, guestId, date, userLoading])
-
-  const fetchHealthData = useCallback(async () => {
-    if ((!user && !guestId) || userLoading) return
-
-    setIsLoadingHealth(true)
-    try {
-      const id = user ? user.uid : guestId!
-      const response = await userApi.getHealthData(id, !user)
-      if (response.success && response.data) {
-        setHeight(response.data.height)
-        setWeight(response.data.weight)
-        setGender(response.data.gender)
-      }
-    } catch (error) {
-      console.error('Failed to fetch health data:', error)
-    } finally {
-      setIsLoadingHealth(false)
-    }
-  }, [user, guestId, userLoading])
-
-  useEffect(() => {
-    fetchSummary()
-    fetchHealthData()
-  }, [fetchSummary, fetchHealthData])
-
-  const handleUpdate = async (id: string, data: any) => {
-    try {
-      await foodLogApi.update(id, data)
+      await updateFoodMutation.mutateAsync({ logId: id, data })
       toast.success(t.dashboard.updateSuccess)
-      fetchSummary()
     } catch (error) {
       console.error('Update failed:', error)
       toast.error(t.dashboard.updateFailed)
@@ -94,9 +69,8 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await foodLogApi.delete(id)
+      await deleteFoodMutation.mutateAsync(id)
       toast.success(t.dashboard.deleteSuccess)
-      fetchSummary()
     } catch (error) {
       console.error('Delete failed:', error)
       toast.error(t.dashboard.deleteFailed)
@@ -104,16 +78,13 @@ export default function DashboardPage() {
     }
   }
 
-  const handleAdd = async (data: any) => {
+  const handleAdd = async (data: Omit<CreateFoodLogRequest, 'userId' | 'guestId'>) => {
     try {
-      await foodLogApi.create({
+      await createFoodMutation.mutateAsync({
         ...data,
-        guestId: user ? undefined : guestId!,
-        userId: user ? user.uid : (guestId || 'guest'), // Fallback for schema validation
         loggedAt: new Date(),
       })
       toast.success(t.dashboard.addSuccess)
-      fetchSummary()
     } catch (error) {
       console.error('Add failed:', error)
       toast.error(t.dashboard.addFailed)
@@ -154,16 +125,8 @@ export default function DashboardPage() {
 
   const handleSaveHealthData = async (data: { height: number; weight: number; gender?: 'male' | 'female' | 'other' }) => {
     try {
-      const id = user ? user.uid : guestId!
-      const response = await userApi.updateHealthData(id, data, !user)
-      if (response.success && response.data) {
-        setHeight(response.data.height)
-        setWeight(response.data.weight)
-        setGender(response.data.gender)
-        toast.success(t.health.updateSuccess)
-      } else {
-        throw new Error(response.error || 'Failed to update health data')
-      }
+      await updateHealthMutation.mutateAsync(data)
+      toast.success(t.health.updateSuccess)
     } catch (error) {
       console.error('Failed to save health data:', error)
       toast.error(t.health.updateFailed)
@@ -171,7 +134,8 @@ export default function DashboardPage() {
     }
   }
 
-  if (userLoading) {
+  // Show loading only on initial load, not when refetching in background
+  if (userLoading || (isSummaryLoading && !summary)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -181,6 +145,7 @@ export default function DashboardPage() {
 
   const totalCalories = summary?.totalCalories || 0
   // Calculate target calories based on gender: male = 3000, female = 2000
+  const gender = healthData?.gender
   const targetCalories = gender === 'male' ? 3000 : gender === 'female' ? 2000 : 2000
 
   return (
@@ -234,9 +199,9 @@ export default function DashboardPage() {
 
         {/* Health Metrics */}
         <HealthMetrics
-          height={height}
-          weight={weight}
-          gender={gender}
+          height={healthData?.height}
+          weight={healthData?.weight}
+          gender={healthData?.gender}
           onEdit={() => setIsHealthDialogOpen(true)}
         />
 
@@ -258,10 +223,26 @@ export default function DashboardPage() {
         {/* History List */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">{t.dashboard.foodLog}</h2>
-            <Button size="sm" onClick={() => setIsAddOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> {t.dashboard.addFood}
-            </Button>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">{t.dashboard.foodLog}</h2>
+              {/* Background refetch indicator */}
+              {isSummaryFetching && (
+                <RefreshCw className="h-4 w-4 animate-spin text-orange-500" />
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => refetchSummary()}
+                disabled={isSummaryFetching}
+              >
+                <RefreshCw className={`h-4 w-4 ${isSummaryFetching ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button size="sm" onClick={() => setIsAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> {t.dashboard.addFood}
+              </Button>
+            </div>
           </div>
           
           <FoodHistoryList 
@@ -291,9 +272,9 @@ export default function DashboardPage() {
         open={isHealthDialogOpen}
         onClose={() => setIsHealthDialogOpen(false)}
         onSave={handleSaveHealthData}
-        initialHeight={height}
-        initialWeight={weight}
-        initialGender={gender}
+        initialHeight={healthData?.height}
+        initialWeight={healthData?.weight}
+        initialGender={healthData?.gender}
       />
     </div>
   )
