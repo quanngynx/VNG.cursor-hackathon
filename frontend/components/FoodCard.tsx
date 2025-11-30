@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FoodSuggestion } from '@/types/api'
 import { Card } from './ui/card'
 import { Utensils, Flame, ChevronRight } from 'lucide-react'
+import { getFoodImageUrl } from '@/lib/image'
 
 interface FoodCardProps {
   food: FoodSuggestion
@@ -14,9 +15,9 @@ export function FoodCard({ food, onClick }: FoodCardProps) {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Use image_prompt from AI if available, otherwise fallback to food name
-  const prompt = food.image_prompt || `${food.name} delicious Vietnamese food photography`
-  const imageSrc = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=256&height=256&nologo=true&seed=${food.id}`
+  // Use consistent image URL to leverage browser cache
+  // Same URL will be used in FoodDetailModal, so the image is already cached when modal opens
+  const imageSrc = getFoodImageUrl(food)
 
   return (
     <Card
